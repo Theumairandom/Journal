@@ -58,7 +58,13 @@
     padding-bottom:max(30px, calc(env(safe-area-inset-bottom) + 22px));
   }
   .app{
-    display:grid; grid-template-columns:272px minmax(0,1fr);
+    display:grid;
+    grid-template-columns:272px minmax(0,1fr);
+    grid-template-rows:auto minmax(0,1fr) auto;
+    grid-template-areas:
+      "side    main"
+      "future  main"
+      "profile main";
     gap:clamp(12px,1.6vw,20px);
     width:min(1280px,100%); margin:0 auto;
     height:100%; min-height:0;
@@ -66,10 +72,12 @@
 
   /* ---- sidebar ---- */
   .side{
-    display:flex; flex-direction:column; gap:16px; min-height:0;
+    grid-area:side;
+    display:flex; flex-direction:column; gap:14px;
     background:var(--side); border:1.5px solid var(--line); border-radius:28px;
-    padding:22px 16px 16px; overflow-y:auto;
+    padding:20px 16px;
     box-shadow:0 22px 44px rgba(214,110,90,.16);
+    align-self:start;
   }
   .logo{display:flex; align-items:center; gap:11px; padding:0 6px}
   .logo svg{flex:none}
@@ -96,10 +104,9 @@
     box-shadow:0 6px 16px rgba(214,110,90,.18); border:1px solid var(--line);
   }
   .nav.active svg{opacity:1}
-  .side-spacer{flex:1}
-
-  /* ---- 2027 gift widget (lives in the sidebar, out of the way) ---- */
+  /* ---- 2027 gift widget (sidebar column, out of the way) ---- */
   .future{
+    grid-area:future; min-height:0; overflow-y:auto;
     background:rgba(255,255,255,.9); border:1.5px solid #ffd2c6; border-radius:22px;
     padding:16px 14px 14px; text-align:center;
     box-shadow:0 14px 30px rgba(214,110,90,.14);
@@ -136,6 +143,7 @@
   }
 
   .profile{
+    grid-area:profile;
     display:flex; align-items:center; gap:11px;
     background:#fff; border:1.5px solid var(--line); border-radius:18px;
     padding:10px 12px; box-shadow:0 8px 18px rgba(214,110,90,.12);
@@ -153,6 +161,7 @@
 
   /* ---- main cream card ---- */
   .maincard{
+    grid-area:main;
     position:relative; min-height:0; overflow-y:auto;
     background:var(--card); border:1.5px solid var(--line); border-radius:28px;
     padding:clamp(16px,2.4vw,26px);
@@ -311,24 +320,32 @@
     padding:34px 0 18px; font-size:15px;
   }
 
-  /* ---- responsive: sidebar folds to top, gift moves below shelves ---- */
+  /* ---- responsive: every block is a real box, simple flex column ---- */
   @media (max-width:920px){
-    .app{display:flex; flex-direction:column; height:auto}
-    .side{display:contents}
-    .sidenav{
-      display:flex; align-items:center; gap:14px; flex-wrap:wrap; justify-content:space-between;
-      background:var(--side); border:1.5px solid var(--line); border-radius:24px;
-      padding:12px 14px; box-shadow:0 14px 30px rgba(214,110,90,.14);
+    .app{display:flex; flex-direction:column; height:auto; min-height:0}
+    .side{
+      order:1; align-self:stretch;
+      flex-direction:row; flex-wrap:wrap; align-items:center; justify-content:space-between;
+      gap:8px 12px; padding:12px 14px; border-radius:24px;
     }
     .logo{padding:0}
-    nav{flex-direction:row; gap:2px}
+    nav{flex-direction:row; flex-wrap:wrap; gap:2px}
     .nav{padding:9px 12px; font-size:13.5px}
     .nav:hover{transform:translateY(-2px)}
     .maincard{order:2; overflow:visible}
-    .future{order:3}
+    .future{order:3; overflow:visible}
     .profile{order:4}
-    .side-spacer{display:none}
     .shelf-note{display:none}
+  }
+  /* ---- small phones ---- */
+  @media (max-width:560px){
+    .search{order:3; min-width:100%}
+    .books{justify-content:center; gap:20px}
+    .book{width:clamp(106px,38vw,150px)}
+    .shelf{margin-bottom:24px}
+    .shelf-head{gap:7px}
+    .countdown{gap:5px}
+    .cd-cell{padding:7px 1px 5px}
   }
 
   /* ============ VIEW 2 · JOURNAL ============ */
@@ -491,8 +508,7 @@
 
     <!-- sidebar -->
     <aside class="side">
-      <div class="sidenav">
-        <div class="logo" aria-label="Marshmallow — her little library">
+      <div class="logo" aria-label="Marshmallow — her little library">
           <!-- little marshmallow with a bow -->
           <svg width="40" height="40" viewBox="0 0 48 48" aria-hidden="true">
             <rect x="7" y="14" width="34" height="28" rx="10" fill="#fff" stroke="#f2b3a2" stroke-width="2.5"/>
@@ -519,12 +535,10 @@
             The Gift
           </button>
         </nav>
-      </div>
+    </aside>
 
-      <div class="side-spacer"></div>
-
-      <!-- the 2027 gift + countdown -->
-      <aside class="future" id="futureCard" aria-label="2027 Edition — a gift for later">
+    <!-- the 2027 gift + countdown -->
+    <aside class="future" id="futureCard" aria-label="2027 Edition — a gift for later">
         <h3 class="fhead">2027 Edition</h3>
         <p class="soon-line">2027 isn’t here yet, love 🎀</p>
         <figure class="book" id="book2027" tabindex="0" role="button" data-action="gift" aria-label="The 2027 gift — do not open until 19 September 2027">
@@ -540,11 +554,10 @@
         <p class="cd-msg" id="cdMsg">the wait is part of the gift</p>
       </aside>
 
-      <div class="profile">
-        <div class="avatar">♥</div>
-        <div class="who"><b>for my love</b><span>reader since 2025</span></div>
-      </div>
-    </aside>
+    <div class="profile">
+      <div class="avatar">♥</div>
+      <div class="who"><b>for my love</b><span>reader since 2025</span></div>
+    </div>
 
     <!-- main shelf card -->
     <main class="maincard">
@@ -597,7 +610,7 @@
           </div>
           <div class="books">
             <figure class="book" id="book2025" tabindex="0" role="button" data-action="open" data-tags="vogue-bee voguebee 2025 edition journal keepsake first" aria-label="Open VOGUE-BEE — the 2025 Edition flip journal">
-              <div class="cover"><img src="Birthday-Journal-Ft.jpg" alt="VOGUE-BEE — 2025 Edition journal cover" data-fallback="2025"></div>
+              <div class="cover"><img id="shelfCover2025" src="birthday-journal-ft.jpg" alt="VOGUE-BEE — 2025 Edition journal cover" data-fallback="2025"></div>
               <figcaption>VOGUE-BEE · tap to open ♥</figcaption>
             </figure>
             <figure class="book ghost" aria-hidden="true">
@@ -617,7 +630,7 @@
           <span class="pill">2026 · in progress</span>
         </figure>
         <figure class="book tile" tabindex="0" role="button" data-action="open" data-tags="vogue-bee voguebee 2025 edition journal keepsake first" aria-label="Open VOGUE-BEE — the 2025 Edition flip journal">
-          <div class="cover"><img data-fallback="2025" src="Birthday-Journal-Ft.jpg" alt=""></div>
+          <div class="cover"><img data-fallback="2025" src="birthday-journal-ft.jpg" alt=""></div>
           <figcaption>VOGUE-BEE</figcaption>
           <span class="pill">2025 · ready to read</span>
         </figure>
@@ -675,8 +688,8 @@
 "use strict";
 
 /* ---------------------------------------------------------- config */
-const IMAGES = [
-  "Birthday-Journal-Ft.jpg", // cover
+let IMAGES = [
+  "birthday-journal-ft.jpg", // cover — all-lowercase (safe on case-sensitive hosts)
   "1.jpg","2.jpg","3.jpg","4.jpg","5.jpg","6.png","7.jpeg","8.jpg"
 ];
 const N = IMAGES.length;
@@ -1227,12 +1240,32 @@ function tickCountdown(){
 }
 
 /* --------------------------------------------------------- init */
-buildPages();
-layout();
-updateUI();
+/* Cover probe: some hosts are case-sensitive. If the lowercase file
+   isn't there but the old capitalised Birthday-Journal-Ft.jpg is,
+   we find it and use it — the cover never silently disappears.      */
+function probe(src){
+  return fetch(src, {method:"HEAD"}).then(r => r.ok).catch(()=>false);
+}
+async function resolveCover(){
+  const lower = "birthday-journal-ft.jpg", camel = "Birthday-Journal-Ft.jpg";
+  try{
+    const ok = await Promise.all([probe(lower), probe(camel)]);
+    return ok[0] ? lower : (ok[1] ? camel : lower);
+  }catch(_){ return lower; } // file:// etc. → keep the default
+}
+(async () => {
+  IMAGES[0] = await resolveCover();
+  const sc = $("shelfCover2025");
+  if(sc) sc.src = IMAGES[0];
+  const tc = document.querySelector('.tile img[data-fallback="2025"]');
+  if(tc) tc.src = IMAGES[0];
+  buildPages();
+  layout();
+  updateUI();
+})();
 tickCountdown();
 setInterval(tickCountdown, 1000);
 })();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a35ad8bd096b7aea',t:'MTc4ODUwMjM4OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
