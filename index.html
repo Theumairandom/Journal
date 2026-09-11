@@ -45,10 +45,21 @@
   }
   @keyframes viewIn{from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:none}}
   .view.gone{display:none!important}
+  /* Library must be a plain scroll block: as a flex item of this fixed-height
+     view it used to be crushed to viewport height and its content overflowed
+     on top of the cards below it (the mobile overlap bug). */
+  #libraryView{display:block; overscroll-behavior-y:contain}
   #journalView{
-    align-items:center; justify-content:center; gap:10px;
+    align-items:center; gap:10px;
     padding:10px 10px max(10px, env(safe-area-inset-bottom));
+    overflow-y:auto; -webkit-overflow-scrolling:touch;
   }
+  /* Safe vertical centering: auto margins center when everything fits, and
+     instead of clipping top+bottom they collapse to 0 (content stays
+     reachable via scroll) when the book + controls outgrow a short screen. */
+  #wrap{flex:none; margin:auto 0}
+  #journalView .caption{flex:none}
+  #journalView .controls{flex:none}
 
   /* ============ VIEW 1 · LIBRARY ============ */
   #libraryView{
@@ -95,6 +106,7 @@
     display:flex; align-items:center; gap:11px;
     padding:11px 13px; border-radius:15px; cursor:pointer;
     font:inherit; font-size:14.5px; font-weight:600; color:#a3625c;
+    touch-action:manipulation; /* instant tap, no double-tap-zoom pause */
     transition:transform .2s ease, background .2s ease, color .2s ease, box-shadow .2s ease;
   }
   .nav svg{flex:none; opacity:.75}
@@ -179,7 +191,7 @@
   .chip{
     appearance:none; border:1.5px solid var(--line); background:#fff; color:#b36459;
     border-radius:999px; padding:8px 16px; font:inherit; font-size:13px; font-weight:700;
-    cursor:pointer; transition:all .2s ease;
+    cursor:pointer; touch-action:manipulation; transition:all .2s ease;
   }
   .chip:hover{border-color:#ffb59e; color:var(--coral); transform:translateY(-1px)}
   .chip.active{
@@ -220,7 +232,7 @@
     margin:2px 0 0; color:#c4776c; font-family:Georgia,serif; font-style:italic;
     font-size:13.5px; letter-spacing:.6px;
   }
-  .bangla{
+  .bangla, .shelf-head h3.bangla{ /* higher specificity than .shelf-head h3, so the Bengali face actually wins */
     font-family:"Baloo Da 2","Noto Sans Bengali","Hind Siliguri",Vrinda,system-ui,sans-serif;
     font-weight:800; letter-spacing:.5px;
   }
@@ -228,7 +240,7 @@
   .shelf-link{
     margin-left:auto; appearance:none; border:0; background:transparent; cursor:pointer;
     color:var(--coral); font:inherit; font-size:13.5px; font-weight:700;
-    padding:4px 6px; border-radius:10px; transition:gap .2s ease, background .2s ease;
+    padding:4px 6px; border-radius:10px; touch-action:manipulation; transition:gap .2s ease, background .2s ease;
   }
   .shelf-link .arr{display:inline-block; transition:transform .25s ease}
   .shelf-link:hover{background:#ffe4d8}
@@ -340,10 +352,18 @@
   /* ---- small phones ---- */
   @media (max-width:560px){
     .search{order:3; min-width:100%}
+    .search input{font-size:16px} /* ≥16px stops iOS Safari from zooming in on focus */
+    .logo{gap:9px}
+    .logo svg{width:34px; height:34px}
+    .logo .wordmark{font-size:19px}
+    .side{padding:10px 12px}
+    .nav{padding:9px 11px}
+    .topbar{margin-bottom:20px}
     .books{justify-content:center; gap:20px}
-    .book{width:clamp(106px,38vw,150px)}
+    .book{width:clamp(100px,34vw,148px)} /* keeps book + "someday" slot side by side on narrow phones */
     .shelf{margin-bottom:24px}
     .shelf-head{gap:7px}
+    .future .book{width:clamp(112px,32vw,150px)}
     .countdown{gap:5px}
     .cd-cell{padding:7px 1px 5px}
   }
@@ -589,7 +609,7 @@
           <div class="books">
             <figure class="book" id="book2026" tabindex="0" role="button" data-action="soon" data-tags="nilakash নীলাকাশ 2026 edition new newest" aria-label="নীলাকাশ — the 2026 Edition — still being written">
               <div class="cover"><img data-fallback="2026" src="cover2026.png" alt="নীলাকাশ — 2026 Edition journal cover"></div>
-              <figcaption>নীলাকাশ · coming soon ♥</figcaption>
+              <figcaption class="bangla" lang="bn">নীলাকাশ · coming soon ♥</figcaption>
             </figure>
             <figure class="book ghost" aria-hidden="true">
               <div class="slot">someday…</div>
@@ -829,9 +849,18 @@ function applyZ(){
 }
 
 /* -------------------------------------------------------- layout */
+const captionEl = journalView.querySelector(".caption");
+const controlsEl = journalView.querySelector(".controls");
 function layout(){
+  // subtract the journal view's real chrome (caption + controls + gaps +
+  // padding) instead of a guessed constant, so the book always fits at any
+  // size — even when the buttons wrap to more rows on a small phone.
+  const capH = (captionEl && captionEl.offsetHeight) ? captionEl.offsetHeight + 10 : 0;
+  const ctrlH = (controlsEl && controlsEl.offsetHeight) ? controlsEl.offsetHeight + 10 : 0;
+  const jcs = getComputedStyle(journalView);
+  const padV = (parseFloat(jcs.paddingTop) || 0) + (parseFloat(jcs.paddingBottom) || 0);
   const vw = Math.max(220, innerWidth - 24);
-  const vh = Math.max(220, innerHeight - 132);
+  const vh = Math.max(220, innerHeight - capH - ctrlH - padV);
   const padL=34, padR=34, padT=48, padB=48;
   const landW = PW, landN = Math.round(PW*0.34);
   const wW = padL+landW+PW+padR, wN = padL+landN+PW+padR, H = PH+padT+padB;
